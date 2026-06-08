@@ -19,9 +19,9 @@ app = Flask(__name__)
 # Azure OpenAI Configuration - UPDATE THESE VALUES
 AZURE_CONFIG = {
     "llm": {
-        "api_key": os.getenv("AZURE_OPENAI_API_KEY", "YOUR_AZURE_API_KEY_HERE"),
+        "api_key": os.getenv("AZURE_OPENAI_API_KEY", "your key here!"),
         "model": "azure_openai/gpt-5.4-pro",
-        "api_base": os.getenv("AZURE_OPENAI_ENDPOINT", "https://YOUR_RESOURCE.openai.azure.com/"),
+        "azure_endpoint": "https://sg-strategic-marketing-resource.services.ai.azure.com/",
         "api_version": "2024-02-15-preview",
     },
     "verbose": False,
@@ -232,7 +232,7 @@ if __name__ == '__main__':
     print("=" * 60)
     print("Website Crawler App - ScrapeGraphAI")
     print("=" * 60)
-    print("\n⚠️  IMPORTANT: Configure your Azure OpenAI credentials!")
+    print("\nIMPORTANT: Configure your Azure OpenAI credentials!")
     print("\nEdit AZURE_CONFIG in crawler_app_v2.py or set environment variables:")
     print("  - AZURE_OPENAI_API_KEY")
     print("  - AZURE_OPENAI_ENDPOINT")

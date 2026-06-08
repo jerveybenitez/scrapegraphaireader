@@ -4,11 +4,11 @@ A simple Flask web application that crawls websites and scrapes all content usin
 
 ## Features
 
-- 🕷️ Crawl all links from a starting URL
-- 📄 Scrape content from every page
-- 📊 Parallel processing for faster crawling
-- 💾 Download results as JSON
-- 🎨 Clean, modern web interface
+- Crawl all links from a starting URL
+- Scrape content from every page
+- Parallel processing for faster crawling
+- Download results as JSON
+- Clean, modern web interface
 
 ## Setup Instructions
 
@@ -21,31 +21,19 @@ python -m playwright install
 
 ### 2. Configure Azure OpenAI
 
-Edit `crawler_app.py` and update the Azure OpenAI configuration:
+Edit `crawler_app_v2.py` and update the Azure OpenAI configuration:
 
 ```python
 AZURE_CONFIG = {
     "llm": {
         "api_key": "YOUR_AZURE_API_KEY",  # Your Azure OpenAI API key
         "model": "azure_openai/gpt-5.4-pro",  # Your deployment name
-        "api_base": "https://YOUR_RESOURCE_NAME.openai.azure.com/",  # Your endpoint
+        "azure_endpoint": "https://sg-strategic-marketing-resource.services.ai.azure.com/",  # Your endpoint
         "api_version": "2024-02-15-preview",
     },
     "verbose": False,
     "headless": True,
 }
-```
-
-**OR** set environment variables:
-
-```bash
-# Windows PowerShell
-$env:AZURE_OPENAI_API_KEY="your-key-here"
-$env:AZURE_OPENAI_ENDPOINT="https://your-resource.openai.azure.com/"
-
-# Mac/Linux
-export AZURE_OPENAI_API_KEY="your-key-here"
-export AZURE_OPENAI_ENDPOINT="https://your-resource.openai.azure.com/"
 ```
 
 ### 3. Run the App
