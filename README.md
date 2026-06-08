@@ -148,6 +148,3 @@ python -m playwright install
 - Be respectful of websites' robots.txt and rate limits
 - Monitor your Azure OpenAI token usage
 
-## License
-
-MIT
