@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crawl Result JSON to HTML Converter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .upload-section {
+            border: 3px dashed #667eea;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            background: #f8f9ff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .upload-section:hover {
+            background: #f0f2ff;
+            border-color: #764ba2;
+        }
+        
+        .upload-section.dragover {
+            background: #e8ebff;
+            border-color: #764ba2;
+            transform: scale(1.02);
+        }
+        
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+        
+        .upload-section h2 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .upload-section p {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        #fileInput {
+            display: none;
+        }
+        
+        .status {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 8px;
+            display: none;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .status.processing {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .results {
+            margin-top: 30px;
+            display: none;
+        }
+        
+        .results h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+        
+        .file-list {
+            list-style: none;
+        }
+        
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .file-name {
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .file-pages {
+            color: #666;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #218838;
+        }
+        
+        .btn-group {
+            margin-top: 30px;
+            text-align: center;
+        }
+        
+        .btn-group .btn {
+            margin: 0 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>JSON to HTML Converter</h1>
+            <p>Convert crawl result JSON files to organized HTML documents</p>
+        </div>
+        
+        <div class="content">
+            <div class="upload-section" id="uploadSection">
+                <div class="upload-icon">📁</div>
+                <h2>Upload JSON File</h2>
+                <p>Click to browse or drag and drop your crawl result JSON file here</p>
+                <input type="file" id="fileInput" accept=".json">
+            </div>
+            
+            <div style="margin-top: 20px; padding: 20px; background: #f8f9ff; border-radius: 8px; display: none;" id="optionsSection">
+                <h3 style="margin-bottom: 15px; color: #667eea; font-size: 16px;">Image Handling Options</h3>
+                <label style="display: flex; align-items: center; cursor: pointer; margin-bottom: 10px;">
+                    <input type="radio" name="imageHandling" value="embed" checked style="margin-right: 10px;">
+                    <span>Try to embed images (may not work due to CORS/auth)</span>
+                </label>
+                <label style="display: flex; align-items: center; cursor: pointer;">
+                    <input type="radio" name="imageHandling" value="links" style="margin-right: 10px;">
+                    <span>Convert images to clickable links instead</span>
+                </label>
+            </div>
+            
+            <div class="status" id="status"></div>
+            
+            <div class="results" id="results">
+                <h3>Generated Files</h3>
+                <ul class="file-list" id="fileList"></ul>
+                <div class="btn-group">
+                    <button class="btn btn-success" id="downloadAllBtn">Download All HTML (ZIP)</button>
+                    <button class="btn btn-primary" id="downloadAllPDFBtn">Download All as PDF (ZIP)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script>
+        const uploadSection = document.getElementById('uploadSection');
+        const fileInput = document.getElementById('fileInput');
+        const status = document.getElementById('status');
+        const results = document.getElementById('results');
+        const fileList = document.getElementById('fileList');
+        const downloadAllBtn = document.getElementById('downloadAllBtn');
+        const downloadAllPDFBtn = document.getElementById('downloadAllPDFBtn');
+        const optionsSection = document.getElementById('optionsSection');
+        
+        let generatedFiles = [];
+        let currentImageHandling = 'embed';
+        
+        // Upload section click
+        uploadSection.addEventListener('click', () => {
+            fileInput.click();
+        });
+        
+        // Drag and drop
+        uploadSection.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadSection.classList.add('dragover');
+        });
+        
+        uploadSection.addEventListener('dragleave', () => {
+            uploadSection.classList.remove('dragover');
+        });
+        
+        uploadSection.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadSection.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+        
+        // File input change
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+        
+        // Image handling option change
+        document.querySelectorAll('input[name="imageHandling"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                currentImageHandling = e.target.value;
+            });
+        });
+        
+        function showStatus(message, type) {
+            status.textContent = message;
+            status.className = 'status ' + type;
+            status.style.display = 'block';
+        }
+        
+        function handleFile(file) {
+            if (!file.name.endsWith('.json')) {
+                showStatus('Please upload a JSON file', 'error');
+                return;
+            }
+            
+            optionsSection.style.display = 'block';
+            showStatus('Processing file...', 'processing');
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const json = JSON.parse(e.target.result);
+                    processJSON(json);
+                } catch (error) {
+                    showStatus('Error parsing JSON: ' + error.message, 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
+        
+        function processJSON(data) {
+            if (!data.pages || !Array.isArray(data.pages)) {
+                showStatus('Invalid JSON format: missing pages array', 'error');
+                return;
+            }
+            
+            // Group pages by parentUrl
+            const grouped = {};
+            
+            data.pages.forEach(page => {
+                const parentUrl = page.parentUrl || 'no-parent';
+                
+                // Extract markdown data
+                const markdownData = page.scrape?.results?.markdown?.data;
+                if (!markdownData || !Array.isArray(markdownData)) {
+                    return; // Skip if no markdown data
+                }
+                
+                if (!grouped[parentUrl]) {
+                    grouped[parentUrl] = [];
+                }
+                
+                grouped[parentUrl].push({
+                    url: page.url,
+                    content: markdownData.join('\n')
+                });
+            });
+            
+            // Generate HTML files
+            generatedFiles = [];
+            
+            Object.keys(grouped).forEach(parentUrl => {
+                const pages = grouped[parentUrl];
+                const fileName = generateFileName(parentUrl);
+                const htmlContent = generateHTML(pages);
+                
+                generatedFiles.push({
+                    name: fileName,
+                    content: htmlContent,
+                    pageCount: pages.length
+                });
+            });
+            
+            if (generatedFiles.length === 0) {
+                showStatus('No valid pages found with markdown data', 'error');
+                return;
+            }
+            
+            displayResults();
+            showStatus(`Successfully generated ${generatedFiles.length} HTML files!`, 'success');
+        }
+        
+        function generateFileName(parentUrl) {
+            if (parentUrl === 'no-parent') {
+                return 'no-parent.html';
+            }
+            
+            // Extract last segment of URL
+            const url = parentUrl.replace(/\/$/, ''); // Remove trailing slash
+            const segments = url.split('/');
+            const lastSegment = segments[segments.length - 1];
+            
+            // Clean up the segment
+            const cleaned = lastSegment
+                .replace(/[^a-zA-Z0-9-_]/g, '-')
+                .replace(/-+/g, '-')
+                .replace(/^-|-$/g, '');
+            
+            return (cleaned || 'index') + '.html';
+        }
+        
+        function processMarkdown(text) {
+            if (currentImageHandling === 'links') {
+                // Convert images to clickable links
+                text = text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '🖼️ <a href="$2" target="_blank" style="color: #667eea; text-decoration: underline;">View Image: $1</a>');
+            } else {
+                // Try to embed images with fallback
+                text = text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" style="max-width: 100%; height: auto;" referrerpolicy="no-referrer" loading="lazy" onerror="this.style.display=\'none\'; this.parentElement.insertAdjacentHTML(\'beforeend\', \'<div class=\\\'broken-image\\\'>🖼️ Image not accessible: <a href=\\\'$2\\\' target=\\\'_blank\\\'>$2</a></div>\');">');
+            }
+            
+            // Process hyperlinks: [text](url) -> text (remove URL, keep text)
+            text = text.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+            
+            // Convert newlines to <br>
+            text = text.replace(/\n/g, '<br>');
+            
+            return text;
+        }
+        
+        function generateHTML(pages) {
+            const bodyContent = pages.map((page, index) => {
+                const processedContent = processMarkdown(page.content);
+                let pageHtml = `    <div class="page-content">
+        <div class="source-url">Source: ${page.url}</div>
+        ${processedContent}
+    </div>`;
+                
+                if (index < pages.length - 1) {
+                    pageHtml += `
+    <div class="page-separator"></div>`;
+                }
+                
+                return pageHtml;
+            }).join('\n');
+            
+            const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crawl Result Documentation</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .page-content {
+            background: white;
+            padding: 30px;
+            margin-bottom: 80px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .page-separator {
+            height: 5px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 40px 0;
+            border-radius: 3px;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 20px 0;
+        }
+        .broken-image {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 20px 0;
+            color: #856404;
+            font-size: 14px;
+        }
+        .broken-image a {
+            color: #004085;
+            word-break: break-all;
+        }
+        .source-url {
+            color: #666;
+            font-size: 12px;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            border-left: 3px solid #667eea;
+        }
+    </style>
+</head>
+<body>
+${bodyContent}
+</body>
+</html>`;
+            
+            return html;
+        }
+        
+        function displayResults() {
+            fileList.innerHTML = '';
+            
+            generatedFiles.forEach((file, index) => {
+                const li = document.createElement('li');
+                li.className = 'file-item';
+                li.innerHTML = `
+                    <div>
+                        <span class="file-name">${file.name}</span>
+                        <span class="file-pages">(${file.pageCount} page${file.pageCount > 1 ? 's' : ''})</span>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-primary" onclick="downloadFile(${index})">Download HTML</button>
+                        <button class="btn btn-success" onclick="convertToPDF(${index})">Convert to PDF</button>
+                    </div>
+                `;
+                fileList.appendChild(li);
+            });
+            
+            results.style.display = 'block';
+        }
+        
+        window.downloadFile = function(index) {
+            const file = generatedFiles[index];
+            const blob = new Blob([file.content], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = file.name;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        
+        window.convertToPDF = async function(index) {
+            const file = generatedFiles[index];
+            
+            // Show processing status
+            showStatus(`Converting ${file.name} to PDF... This may take a while for large documents.`, 'processing');
+            
+            try {
+                // Create an iframe to render the HTML
+                const iframe = document.createElement('iframe');
+                iframe.style.position = 'absolute';
+                iframe.style.left = '-9999px';
+                iframe.style.width = '210mm';
+                iframe.style.height = '297mm';
+                document.body.appendChild(iframe);
+                
+                // Write HTML content to iframe
+                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                iframeDoc.open();
+                iframeDoc.write(file.content);
+                iframeDoc.close();
+                
+                // Wait for content and images to load
+                await new Promise(resolve => {
+                    if (iframeDoc.readyState === 'complete') {
+                        setTimeout(resolve, 500);
+                    } else {
+                        iframe.onload = () => setTimeout(resolve, 500);
+                    }
+                });
+                
+                // Wait for images
+                const images = iframeDoc.querySelectorAll('img');
+                await Promise.all(Array.from(images).map(img => {
+                    if (img.complete) return Promise.resolve();
+                    return new Promise(resolve => {
+                        img.onload = resolve;
+                        img.onerror = resolve; // Continue even if image fails
+                    });
+                }));
+                
+                console.log('Starting PDF conversion...');
+                console.log('Content height:', iframeDoc.body.scrollHeight);
+                
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'mm',
+                    format: 'a4'
+                });
+                
+                // Get the body element
+                const element = iframeDoc.body;
+                
+                // Configure html2canvas with better error handling
+                const canvas = await html2canvas(element, {
+                    scale: 2,
+                    useCORS: true,
+                    allowTaint: true,
+                    backgroundColor: '#ffffff',
+                    logging: false,
+                    onclone: (clonedDoc) => {
+                        // Remove broken images from cloned document
+                        const imgs = clonedDoc.querySelectorAll('img');
+                        imgs.forEach(img => {
+                            if (!img.complete || img.naturalHeight === 0) {
+                                img.style.display = 'none';
+                            }
+                        });
+                    },
+                    ignoreElements: (element) => {
+                        // Skip elements that might cause issues
+                        return element.classList && element.classList.contains('broken-image');
+                    }
+                });
+                
+                console.log('Canvas created:', canvas.width, 'x', canvas.height);
+                
+                // Calculate PDF dimensions
+                const imgWidth = 210; // A4 width in mm
+                const pageHeight = 297; // A4 height in mm
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                let heightLeft = imgHeight;
+                let position = 0;
+                
+                const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                
+                // Add first page
+                pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+                
+                // Add additional pages if needed
+                while (heightLeft > 0) {
+                    position = heightLeft - imgHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                }
+                
+                // Save the PDF
+                pdf.save(file.name.replace('.html', '.pdf'));
+                
+                // Clean up
+                document.body.removeChild(iframe);
+                
+                showStatus(`Successfully converted ${file.name} to PDF!`, 'success');
+            } catch (error) {
+                console.error('PDF conversion error:', error);
+                showStatus(`Error converting to PDF: ${error.message}. Check console for details.`, 'error');
+            }
+        }
+        
+        downloadAllBtn.addEventListener('click', async () => {
+            if (generatedFiles.length === 0) return;
+            
+            const zip = new JSZip();
+            
+            generatedFiles.forEach(file => {
+                zip.file(file.name, file.content);
+            });
+            
+            const content = await zip.generateAsync({ type: 'blob' });
+            const url = URL.createObjectURL(content);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'result-docs.zip';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+        
+        downloadAllPDFBtn.addEventListener('click', async () => {
+            if (generatedFiles.length === 0) return;
+            
+            showStatus(`Converting ${generatedFiles.length} files to PDF... This may take a while.`, 'processing');
+            
+            try {
+                const zip = new JSZip();
+                const { jsPDF } = window.jspdf;
+                
+                // Create iframe once for all conversions
+                const iframe = document.createElement('iframe');
+                iframe.style.position = 'absolute';
+                iframe.style.left = '-9999px';
+                iframe.style.width = '210mm';
+                iframe.style.height = '297mm';
+                document.body.appendChild(iframe);
+                
+                for (let i = 0; i < generatedFiles.length; i++) {
+                    const file = generatedFiles[i];
+                    showStatus(`Converting ${i + 1}/${generatedFiles.length}: ${file.name}`, 'processing');
+                    
+                    try {
+                        // Write HTML content to iframe
+                        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                        iframeDoc.open();
+                        iframeDoc.write(file.content);
+                        iframeDoc.close();
+                        
+                        // Wait for content to load
+                        await new Promise(resolve => {
+                            if (iframeDoc.readyState === 'complete') {
+                                setTimeout(resolve, 500);
+                            } else {
+                                iframe.onload = () => setTimeout(resolve, 500);
+                            }
+                        });
+                        
+                        // Wait for images
+                        const images = iframeDoc.querySelectorAll('img');
+                        await Promise.all(Array.from(images).map(img => {
+                            if (img.complete) return Promise.resolve();
+                            return new Promise(resolve => {
+                                img.onload = resolve;
+                                img.onerror = resolve;
+                            });
+                        }));
+                        
+                        const pdf = new jsPDF({
+                            orientation: 'portrait',
+                            unit: 'mm',
+                            format: 'a4'
+                        });
+                        
+                        const element = iframeDoc.body;
+                        
+                        const canvas = await html2canvas(element, {
+                            scale: 2,
+                            useCORS: true,
+                            allowTaint: true,
+                            backgroundColor: '#ffffff',
+                            logging: false,
+                            onclone: (clonedDoc) => {
+                                const imgs = clonedDoc.querySelectorAll('img');
+                                imgs.forEach(img => {
+                                    if (!img.complete || img.naturalHeight === 0) {
+                                        img.style.display = 'none';
+                                    }
+                                });
+                            },
+                            ignoreElements: (element) => {
+                                return element.classList && element.classList.contains('broken-image');
+                            }
+                        });
+                        
+                        const imgWidth = 210;
+                        const pageHeight = 297;
+                        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                        let heightLeft = imgHeight;
+                        let position = 0;
+                        
+                        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                        
+                        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+                        heightLeft -= pageHeight;
+                        
+                        while (heightLeft > 0) {
+                            position = heightLeft - imgHeight;
+                            pdf.addPage();
+                            pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+                            heightLeft -= pageHeight;
+                        }
+                        
+                        // Get PDF as blob
+                        const pdfBlob = pdf.output('blob');
+                        
+                        // Add to ZIP
+                        zip.file(file.name.replace('.html', '.pdf'), pdfBlob);
+                    } catch (fileError) {
+                        console.error(`Error converting ${file.name}:`, fileError);
+                        // Continue with other files even if one fails
+                    }
+                }
+                
+                // Clean up iframe
+                document.body.removeChild(iframe);
+                
+                // Generate and download ZIP
+                showStatus('Generating ZIP file...', 'processing');
+                const content = await zip.generateAsync({ type: 'blob' });
+                const url = URL.createObjectURL(content);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'result-docs-pdf.zip';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                showStatus(`Successfully converted all ${generatedFiles.length} files to PDF!`, 'success');
+            } catch (error) {
+                console.error('Batch PDF conversion error:', error);
+                showStatus(`Error during batch conversion: ${error.message}`, 'error');
+            }
+        });
+    </script>
+</body>
+</html>
