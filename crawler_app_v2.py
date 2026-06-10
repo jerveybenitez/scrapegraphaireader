@@ -19,12 +19,12 @@ app = Flask(__name__)
 # Azure OpenAI Configuration - UPDATE THESE VALUES
 AZURE_CONFIG = {
     "llm": {
-        "api_key": os.getenv("AZURE_OPENAI_API_KEY", "your key here!"),
-        "model": "azure_openai/gpt-5.4-pro",
+        "api_key": "your_api_key_here",  # Replace with your Azure OpenAI API key
+        "model": "azure_openai/gpt-5.4-pro",    
         "azure_endpoint": "https://sg-strategic-marketing-resource.services.ai.azure.com/",
         "api_version": "2024-02-15-preview",
     },
-    "verbose": False,
+    "verbose": True,
     "headless": True,
 }
 
@@ -218,9 +218,10 @@ def download_result(crawl_id):
     if crawl_id not in crawl_results:
         return jsonify({"error": "Crawl not found"}), 404
     
-    # Save to file
     filename = f"crawl_{crawl_id}.json"
-    filepath = f"/tmp/{filename}"
+    import tempfile
+    temp_dir = tempfile.gettempdir()
+    filepath = os.path.join(temp_dir, filename)
     
     with open(filepath, 'w', encoding='utf-8') as f:
         json.dump(crawl_results[crawl_id], f, indent=2, ensure_ascii=False)
